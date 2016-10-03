@@ -21,7 +21,7 @@ OBJCOPY=arm-none-eabi-objcopy
 OBJDUMP=arm-none-eabi-objdump
 OBJSIZE=arm-none-eabi-size
 
-CFLAGS  = -g  -O0 -Wall -Tlpc17xx.ld
+CFLAGS  = -g3  -O0 -Wall -Tlpc17xx.ld
 # Define the device we are using
 CFLAGS += -D__weak="__attribute__((weak))" -D__packed="__attribute__((__packed__))"
 CFLAGS += -D PACK_STRUCT_END=__attribute\(\(packed\)\) 
