@@ -4,8 +4,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "lpc17xx_libcfg.h"
 
+#define MAX_PRINT_LENGTH 1024
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
 
 uint8_t GREETER[] = "HELLO THE WORLD\n";
@@ -76,6 +78,21 @@ char uart_rx() {
     return rx;
 }
 
+void uprintf(const char * fmt, ...) {
+    char c[MAX_PRINT_LENGTH];
+    va_list argptr;
+    va_start(argptr, fmt);
+    vsprintf(c, fmt, argptr);
+
+    int i = 0;
+    while(c[i] != '\0' && i < MAX_PRINT_LENGTH) {
+        uart_tx(c[i]);
+        i++;
+    }
+
+    va_end(argptr);
+}
+
 int main(void)
 {
     SystemInit();
@@ -94,7 +111,8 @@ int main(void)
     char rxChar;
     while(1) {
         rxChar = uart_rx();
-        uart_tx(rxChar);
+        uprintf("I've received: %c\n", rxChar);
+        // uart_tx(rxChar);
     }
     return 0 ;
 }
