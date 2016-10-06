@@ -11,6 +11,7 @@ SRCS =   \
 
 PROJ_NAME=tx_test
 LPC_CORE=$(HOME)/dev/arm/LPC17XX_CORE
+LAB=lab1
 
 # that's it, no need to change anything below this line!
 
@@ -87,5 +88,8 @@ ocdconnect:
 
 gdbconnect:
 	arm-none-eabi-gdb --eval-command="target remote localhost:3333 && tui enable" $(PROJ_NAME).elf
+
+pushtobranch:
+	git push origin master:$(LAB)
 
 print-%: ; @echo $*=$($*)
