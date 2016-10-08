@@ -10,11 +10,24 @@
 #define MAX_PRINT_LENGTH 1024
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
 
+#define URX_BUF_LEN             1024
+// char URX_BUF[URX_BUF];
+typedef struct
+{
+    char stream[URX_BUF_LEN];
+    int i;
+} RX_BUFFER;
+
+RX_BUFFER URX_BUF;
+
 uint8_t GREETER[] = "HELLO THE WORLD\n";
 const int GREETER_LEN = 16;
 
 #define PCUART2            24
 #define PCUART3            25
+
+#define U_IER_RBR_INT_EN 0
+
 #define U_FCR_FIFO_ENABLE  0x00
 #define U_FCR_FIFO_RX_RST  0x01
 #define U_FCR_FIFO_TX_RST  0x02
@@ -29,7 +42,27 @@ const int GREETER_LEN = 16;
 #define U_LSR_THRE         0x05
 #define U_LSR_TEMT         0x06
 
+void initBuffer(RX_BUFFER *buf) {
+    buf->i = 0;
+}
+
+void clearBuffer(RX_BUFFER *buf) {
+    buf->i = 0;
+    for(int i = 0; i < URX_BUF_LEN; i++) {
+        buf->stream[i] = 0;
+    }
+}
+
+void addToBuffer(RX_BUFFER *buf, char c) {
+    if(buf->i >= URX_BUF_LEN - 1) {
+        clearBuffer(buf);
+    } 
+    buf->i++;
+    buf->stream[buf->i] = c;
+}
+
 void uart_init(uint32_t baud) {
+    initBuffer(&URX_BUF);
     uint32_t uartPclk, pclk, regVal;
     LPC_SC->PCONP |= (1 << PCUART3);
     LPC_PINCON->PINSEL0 |= (0x02 << 0);    // set P0.0 RXD3
@@ -39,6 +72,9 @@ void uart_init(uint32_t baud) {
     LPC_UART3->LCR |= (3 << U_LCR_WORD_LEN);    // data:        8 bit
     LPC_UART3->LCR &= ~(1 << U_LCR_PARITY_EN);  // parity:      None
     LPC_UART3->LCR &= ~(1 << U_LCR_STOP_BIT);   // stop bits:   1 bit
+
+    // Enable RBR interrupts
+    LPC_UART1->IER |= (1 << U_IER_RBR_INT_EN);    // enable RDA interrupts
 
     LPC_UART3->LCR |= (1 << U_LCR_DIV_LATCH);   // enable access to divisors
     // setup baud rate
@@ -91,6 +127,18 @@ void uprintf(const char * fmt, ...) {
     }
 
     va_end(argptr);
+}
+void UART1_IRQHandler(void) {
+    if(URX_BUF.i <= (URX_BUF_LEN - 1)) {
+        clearBuffer(&URX_BUF);
+    }
+    else {
+        char ch = uart_rx();
+        addToBuffer(&URX_BUF, ch);
+        if(ch == '\n') {
+            // command is entered
+        }
+    }
 }
 
 int main(void)
