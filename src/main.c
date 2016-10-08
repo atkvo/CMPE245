@@ -20,14 +20,14 @@ typedef struct
 
 RX_BUFFER URX_BUF;
 
-uint8_t GREETER[] = "HELLO THE WORLD\n";
-const int GREETER_LEN = 16;
+const char GREET[] = "**** Welcome ****\n";
+const char GREET_WAIT_CMD[] = "Please enter your command and press enter: \n\r\t";
 
 #define PCUART2            24
 #define PCUART3            25
 
-#define U_IER_RBR_INT_EN 0
-
+#define U_IER_RBR_INT_EN   0
+#define U_IIR_RDA_INT_ID   (0x2 << 1) 
 #define U_FCR_FIFO_ENABLE  0x00
 #define U_FCR_FIFO_RX_RST  0x01
 #define U_FCR_FIFO_TX_RST  0x02
@@ -57,8 +57,8 @@ void addToBuffer(RX_BUFFER *buf, char c) {
     if(buf->i >= URX_BUF_LEN - 1) {
         clearBuffer(buf);
     } 
-    buf->i++;
     buf->stream[buf->i] = c;
+    buf->i++;
 }
 
 void uart_init(uint32_t baud) {
@@ -74,7 +74,7 @@ void uart_init(uint32_t baud) {
     LPC_UART3->LCR &= ~(1 << U_LCR_STOP_BIT);   // stop bits:   1 bit
 
     // Enable RBR interrupts
-    LPC_UART1->IER |= (1 << U_IER_RBR_INT_EN);    // enable RDA interrupts
+    LPC_UART3->IER |= (1 << U_IER_RBR_INT_EN);    // enable RDA interrupts
 
     LPC_UART3->LCR |= (1 << U_LCR_DIV_LATCH);   // enable access to divisors
     // setup baud rate
@@ -128,15 +128,20 @@ void uprintf(const char * fmt, ...) {
 
     va_end(argptr);
 }
-void UART1_IRQHandler(void) {
-    if(URX_BUF.i <= (URX_BUF_LEN - 1)) {
-        clearBuffer(&URX_BUF);
-    }
-    else {
-        char ch = uart_rx();
-        addToBuffer(&URX_BUF, ch);
-        if(ch == '\n') {
-            // command is entered
+void UART3_IRQHandler(void) {
+    if ((LPC_UART3->IIR & U_IIR_RDA_INT_ID) == U_IIR_RDA_INT_ID) {
+        if(URX_BUF.i >= (URX_BUF_LEN - 1)) {
+            clearBuffer(&URX_BUF);
+            uprintf("Input buffer overrun.\r\n");
+        }
+        else {
+            char ch = uart_rx();
+            addToBuffer(&URX_BUF, ch);
+            if(ch == '\n') {
+                uprintf("RX: %s", URX_BUF.stream);
+                clearBuffer(&URX_BUF);
+                // command is entered
+            }
         }
     }
 }
@@ -146,20 +151,11 @@ int main(void)
     SystemInit();
     SystemCoreClockUpdate();
     uart_init(9600);
-    char greeter[] = "Hiya sir";
-    uart_tx('h');
-    uart_tx('e');
-    uart_tx('l');
-    uart_tx('l');
-    uart_tx('o');
-    int i =0;
-    for(i= 0; greeter[i] != '\0'; i++) {
-        uart_tx(greeter[i]);
-    }
-    char rxChar;
+    NVIC_EnableIRQ(UART3_IRQn);
+    uprintf(GREET);
     while(1) {
-        rxChar = uart_rx();
-        uprintf("I've received: %c\n", rxChar);
+        // rxChar = uart_rx();
+        // uprintf("I've received: %c\n", rxChar);
         // uart_tx(rxChar);
     }
     return 0 ;
