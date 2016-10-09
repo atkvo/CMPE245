@@ -6,6 +6,7 @@ SRCS =   \
 	 startup_LPC17xx.c \
 	 uart_controls.c \
 	 samplingtimer.c \
+	 gpiocontrols.c \
 	 engine.c \
  	 main.c
  
