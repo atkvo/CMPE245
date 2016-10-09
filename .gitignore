@@ -1,0 +1,5 @@
+*.bin
+*.dmp
+*.elf
+*.hex
+*.map
