@@ -21,10 +21,10 @@ s_buff URX_BUF;
 
 const char GREET[] = "**** Welcome ****\n";
 const char GREET_WAIT_CMD[] = "Please enter your command and press enter: \n\r\t";
-const char CMD_TIMER_START[] = "TIMERSTART";
-const char CMD_TIMER_STOP[] = "TIMERSTOP";
-const char CMD_TIMER_SET[] = "TIMERSET";
-const int CMD_TIMER_PARAM_INDEX = 8;
+const char CMD_TIMER_START[] = "SAMPLESTART";
+const char CMD_TIMER_STOP[] = "SAMPLESTOP";
+const char CMD_TIMER_SET[] = "SAMPLERATE";
+const int CMD_TIMER_PARAM_INDEX = 10;
 
 int isScanning = false;
 
@@ -46,9 +46,11 @@ void UART3_IRQHandler(void) {
                 uprintf("\tACK: %s", URX_BUF.stream);
                 if (strcmp(CMD_TIMER_START, URX_BUF.stream) == 0) {
                     samplerStart();
+                    isScanning = true;
                 }
                 else if (strcmp(CMD_TIMER_STOP, URX_BUF.stream) == 0) {
                     samplerStop();
+                    isScanning = false;
                 }
                 else if (strstr(URX_BUF.stream, CMD_TIMER_SET) != NULL) {
                     char * tmp;
