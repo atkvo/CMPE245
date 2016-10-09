@@ -47,6 +47,10 @@ void initGpio(void) {
     LPC_GPIOINT->IO2IntEnF |= (1 << RX_PIN);    // enable falling edge interrupt
 }
 
+int readRxPin() {
+    return (LPC_GPIO2->FIOPIN0 & ( 1 << RX_PIN) ? 1 : 0);
+}
+
 void clearRxInterrupt() {
     LPC_GPIOINT->IO2IntClr |= (1 << RX_PIN);
 }

@@ -20,6 +20,6 @@ void setLeds(int i);
 void setTx(int i);
 void setBlue(int i);
 void clearRxInterrupt();
-
+int readRxPin();
 
 #endif
