@@ -8,6 +8,7 @@
 #include <string.h>
 #include "lpc17xx_libcfg.h"
 #include "uart_controls.h"
+#include "samplingtimer.h"
 #include "engine.h"
 
 #define MAX_PRINT_LENGTH 1024
@@ -24,32 +25,6 @@ const char CMD_TIMER_STOP[] = "TIMERSTOP";
 const char CMD_TIMER_SET[] = "TIMERSET";
 const int CMD_TIMER_PARAM_INDEX = 8;
 
-#define RITINT   0
-#define RITENCLR 1
-#define RITEN    3
-#define PCRIT    16
-void ritSetHz(int desiredHz) {
-    // default PCLK is SystemCoreClock/4
-    int timerHz = SystemCoreClock/4;
-    int countsRequired = timerHz/desiredHz;
-    LPC_RIT->RICOMPVAL = countsRequired;
-}
-void ritInit(int desiredHz){
-    LPC_SC->PCONP |= (1 << PCRIT);
-    LPC_RIT->RICTRL |= (1 << RITINT);
-    ritSetHz(desiredHz);
-}
-
-void ritStart() {
-    LPC_RIT->RICOUNTER = 0;
-    LPC_RIT->RICTRL |= (1 << RITEN);
-    LPC_RIT->RICTRL |= (1 << RITENCLR);
-}
-
-void ritStop() {
-    LPC_RIT->RICTRL &= ~(1 << RITEN);
-    LPC_RIT->RICTRL &= ~(1 << RITENCLR);
-}
 
 void RIT_IRQHandler(void) {
     uprintf("TICK!\n");
@@ -68,19 +43,19 @@ void UART3_IRQHandler(void) {
             if(ch == '\n') {
                 uprintf("\tACK: %s", URX_BUF.stream);
                 if (strcmp(CMD_TIMER_START, URX_BUF.stream) == 0) {
-                    ritStart();
+                    samplerStart();
                 }
                 else if (strcmp(CMD_TIMER_STOP, URX_BUF.stream) == 0) {
-                    ritStop();
+                    samplerStop();
                 }
                 else if (strstr(URX_BUF.stream, CMD_TIMER_SET) != NULL) {
                     char * tmp;
                     int newrate = strtol(&URX_BUF.stream[CMD_TIMER_PARAM_INDEX], &tmp, 10);
                     if(newrate > 0) {
                         uprintf("\tSetting rate to: %i Hz\n", newrate);
-                        ritStop();
-                        ritSetHz(newrate);
-                        ritStart();
+                        samplerStop();
+                        samplerSetHz(newrate);
+                        samplerStart();
                     }
                     else { 
                         uprintf("\tInvalid rate: %i Hz\n", newrate);
@@ -102,8 +77,8 @@ int main(void)
     SystemCoreClockUpdate();
     initBuffer(&URX_BUF);
     uart_init(9600);
-    ritInit(2);
-    ritStart();
+    samplerInit(2);
+    samplerStart();
     NVIC_EnableIRQ(UART3_IRQn);
     NVIC_EnableIRQ(RIT_IRQn);
     uprintf(GREET);
