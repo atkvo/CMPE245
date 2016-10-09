@@ -108,8 +108,8 @@ int main(void)
     initLeds();
     initBuffer(&URX_BUF);
     uart_init(9600);
-    samplerInit(2);
-    samplerStart();
+    samplerInit(9600);
+    samplerStop();
     NVIC_EnableIRQ(UART3_IRQn);
     NVIC_EnableIRQ(RIT_IRQn);
     NVIC_EnableIRQ(EINT3_IRQn);
