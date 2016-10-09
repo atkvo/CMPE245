@@ -4,6 +4,7 @@ SRCS =   \
 	 system_LPC17xx.c \
 	 newlibstubs.c \
 	 startup_LPC17xx.c \
+	 uart_controls.c \
  	 main.c
  
 	 
