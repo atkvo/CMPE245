@@ -5,6 +5,7 @@ SRCS =   \
 	 newlibstubs.c \
 	 startup_LPC17xx.c \
 	 uart_controls.c \
+	 engine.c \
  	 main.c
  
 	 
@@ -38,12 +39,14 @@ LDFLAGS += -Wl,-Map,$(PROJ_NAME).map,-L=$(LPC_CORE)/Drivers
 ###################################################
 
 vpath %.c src
+vpath %.c engine/
 vpath %.c $(LPC_CORE)/Core/Src 
 vpath %.c $(LPC_CORE)/Drivers/Src
 
 ROOT=$(shell pwd)
 
 CFLAGS += -Iinc 
+CFLAGS += -Iengine/ 
 CFLAGS += -I$(LPC_CORE)/Inc 
 CFLAGS += -I$(LPC_CORE)/Core/Inc
 CFLAGS += -I$(LPC_CORE)/Drivers/Inc
