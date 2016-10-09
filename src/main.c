@@ -13,11 +13,13 @@
 #include "engine.h"
 
 #define MAX_PRINT_LENGTH 1024
+#define MAX_RX_LEN       1024
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
 
 //#define URX_BUF_LEN             1024
 
 s_buff URX_BUF;
+s_buff RX_BUF;
 
 const char GREET[] = "**** Welcome ****\n";
 const char GREET_WAIT_CMD[] = "Please enter your command and press enter: \n\r\t";
@@ -30,6 +32,17 @@ int isScanning = false;
 
 void RIT_IRQHandler(void) {
     uprintf("TICK!\n");
+    if(RX_BUF.bits < MAX_RX_LEN - 1) {
+        int bit = readRxPin();
+        setBlue(bit);
+        pushToBuffer(&RX_BUF, bit);
+    } 
+    else {
+        uprintf("PARSE NOW. SIZE OF BUFF: %i", RX_BUF.bits);
+        clearBuffer(&RX_BUF);
+        isScanning = false;
+        samplerStop();
+    }
     // clear the interrupt by setting 1
     LPC_RIT->RICTRL |= (1 << RITINT);
 }
@@ -83,13 +96,14 @@ void EINT3_IRQHandler() {
         isScanning = true;
     }
     state = state ? 0 : 1;
-    setBlue(state);
+    // setBlue(state);
     clearRxInterrupt();
 }
 int main(void)
 {
     SystemInit();
     SystemCoreClockUpdate();
+    initBuffer(&RX_BUF);
     initGpio();
     initLeds();
     initBuffer(&URX_BUF);
