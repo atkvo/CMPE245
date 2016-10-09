@@ -5,6 +5,7 @@ SRCS =   \
 	 newlibstubs.c \
 	 startup_LPC17xx.c \
 	 uart_controls.c \
+	 samplingtimer.c \
 	 engine.c \
  	 main.c
  
@@ -85,7 +86,8 @@ clean:
 	rm -f $(PROJ_NAME).map
 
 ocdstart:
-	sudo openocd -c "interface cmsis-dap" -f /usr/local/share/openocd/scripts/target/lpc17xx.cfg	
+	sudo openocd -c "interface cmsis-dap" -f embedded-artists-lpc1769.cfg	
+	# sudo openocd -c "interface cmsis-dap" -f /usr/local/share/openocd/scripts/target/lpc17xx.cfg	
 
 ocdconnect:
 	telnet localhost 4444
