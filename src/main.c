@@ -37,13 +37,49 @@ void UART3_IRQHandler(void) {
     }
 }
 
+#define RITINT   0
+#define RITENCLR 1
+#define RITEN    3
+#define PCRIT    16
+void ritSetHz(int desiredHz) {
+    // default PCLK is SystemCoreClock/4
+    int timerHz = SystemCoreClock/4;
+    int countsRequired = timerHz/desiredHz;
+    LPC_RIT->RICOMPVAL = countsRequired;
+}
+void ritInit(int desiredHz){
+    LPC_SC->PCONP |= (1 << PCRIT);
+    LPC_RIT->RICTRL |= (1 << RITINT);
+    ritSetHz(desiredHz);
+}
+
+void ritStart() {
+    LPC_RIT->RICOUNTER = 0;
+    LPC_RIT->RICTRL |= (1 << RITEN);
+    LPC_RIT->RICTRL |= (1 << RITENCLR);
+}
+
+void ritStop() {
+    LPC_RIT->RICTRL &= ~(1 << RITEN);
+    LPC_RIT->RICTRL &= ~(1 << RITENCLR);
+}
+
+void RIT_IRQHandler(void) {
+    uprintf("TICK!\n");
+    // clear the interrupt by setting 1
+    LPC_RIT->RICTRL |= (1 << RITINT);
+}
+
 int main(void)
 {
     SystemInit();
     SystemCoreClockUpdate();
     initBuffer(&URX_BUF);
     uart_init(9600);
+    ritInit(2);
+    ritStart();
     NVIC_EnableIRQ(UART3_IRQn);
+    NVIC_EnableIRQ(RIT_IRQn);
     uprintf(GREET);
     uprintf(GREET_WAIT_CMD);
     while(1) {
