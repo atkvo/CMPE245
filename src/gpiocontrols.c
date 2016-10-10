@@ -8,7 +8,7 @@ void initLeds() {
 }
 
 void setLeds(int i) {
-    if (i == 0) {
+    if (i == 1) {
         // LPC_GPIO2->FIOSET |= (1 << TX_PIN);
         LPC_GPIO0->FIOSET |= (1 << LED_RED);
         LPC_GPIO3->FIOSET |= (1 << LED_GREEN);
@@ -23,12 +23,12 @@ void setLeds(int i) {
 }
 
 void setTx(int i) {
-    if (i == 0) { LPC_GPIO2->FIOSET |= (1 << TX_PIN); }
+    if (i == 1) { LPC_GPIO2->FIOSET |= (1 << TX_PIN); }
     else        { LPC_GPIO2->FIOCLR |= (1 << TX_PIN); }
 }
 
 void setBlue(int i) {
-    if (i == 0) { LPC_GPIO3->FIOSET |= (1 << LED_BLUE); }
+    if (i == 1) { LPC_GPIO3->FIOSET |= (1 << LED_BLUE); }
     else        { LPC_GPIO3->FIOCLR |= (1 << LED_BLUE); }
 }
 
