@@ -30,8 +30,8 @@ int EXTRACT_PAYLOAD_FLAG = 0;
 int LISTEN_EN_FLAG = 0;
 int RUN_TEST_FLAG = 0;
 
-const char GREET[] = "**** SYSTEM INITIALIZED ****\n";
-const char GREET_WAIT_CMD[] = "Please enter your command and press enter: ";
+const char GREET[] = "\n\t**** SYSTEM INITIALIZED ****\n";
+const char GREET_WAIT_CMD[] = "\n\t$ ";
 const char CMD_TIMER_START[] = ">S1";
 const char CMD_TIMER_STOP[] = ">S0";
 const char CMD_TIMER_QUERY[] = ">SR?";
@@ -76,7 +76,6 @@ void RIT_IRQHandler(void) {
             uprintf("\nEVENT: BUFFER FILLED\n");
             LISTEN_EN_FLAG = 0;
             EXTRACT_PAYLOAD_FLAG = 1;
-            // clearBuffer(&RX_BUF);
             samplerStop();
         }
     } 
@@ -230,12 +229,12 @@ int main(void)
             if(RUN_TEST_FLAG == 1) {
                 payloadIndex = scanForMatch(&WINDOW, &TEST_RX_BUF, MIN_CONFIDENCE);
                 if(payloadIndex > 0) {
-                    uprintf("PAYLOAD @ %i\n", payloadIndex);
+                    uprintf("\n\tPAYLOAD @ %i\n", payloadIndex);
                     extractPayload(&TEST_RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN);
-                    uprintf("PAYLOAD: %s\n", RX_PAYLOAD);
+                    uprintf("\tPAYLOAD: %s\n", RX_PAYLOAD);
                 }
                 else {
-                    uprintf("PAYLOAD INDEX INVALID: %i", payloadIndex);
+                    uprintf("\n\tPAYLOAD INDEX INVALID: %i\n", payloadIndex);
                 }
                 uprintf("\nEVENT: Test is done.\n");
                 RUN_TEST_FLAG = 0;
@@ -251,14 +250,14 @@ int main(void)
                     uprintf("\tPAYLOAD: %s", RX_PAYLOAD);
                 }
                 else {
-                    uprintf("\n\tPAYLOAD INDEX INVALID: %i", payloadIndex);
+                    uprintf("\n\tPAYLOAD INDEX INVALID: %i\n", payloadIndex);
                 }
                 uprintf("\nEVENT: EXTRACTION DONE. CLEARING RX BUFFER\n");
                 clearBuffer(&RX_BUF);
                 payloadIndex = 0;
                 EXTRACT_PAYLOAD_FLAG = 0;
-                LISTEN_EN_FLAG = 1;
                 uprintf(GREET_WAIT_CMD);
+                LISTEN_EN_FLAG = 1;
             }
         }
         // rxChar = uart_rx();
