@@ -85,6 +85,7 @@ void addPayload(s_buff *sbuf, char * payload) {
 // returns the index of payload within data->stream
 // returns -1 if minimum confidence isn't met
 int scanForMatch(s_buff *window, s_buff *data, unsigned int minConfidence) {
+    if(data->bits < window->bits) { return -1; }
     unsigned int bitHit = 0;
     unsigned int currentConfidence = 0;
     int lastMatchedHexRead = 0;
