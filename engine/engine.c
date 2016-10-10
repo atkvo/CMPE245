@@ -21,8 +21,10 @@ void pushToBuffer(s_buff *buf, char c) {
     if(buf->bits >= BUF_SIZE - 1) {
         clearBuffer(buf);
     }
-    buf->stream[buf->bits] = c;
-    buf->bits++;
+    for(int i = 0; i < 8; i++) {
+        buf->stream[buf->bits] = ((c >> (7 - i)) & 0x01);
+        buf->bits++;
+    }
 }
 
 void p_generateSync(s_buff *sb, uint16_t bytes, int enableCorruption, int percentage) {
@@ -53,6 +55,7 @@ void generateSync(s_buff *sb, uint16_t bytes) {
     p_generateSync(sb, bytes, 0, 0);
 }
 
+// percentage must be >= 10 otherwise will be treated as 0
 void generateCorruptedSync(s_buff *sb, uint16_t bytes, int percentage) {
     p_generateSync(sb, bytes, 1, percentage);
 }
@@ -124,9 +127,11 @@ int scanForMatch(s_buff *window, s_buff *data, unsigned int minConfidence) {
 
 void extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength) {
     int j = 0;
-    int tmp = 256 - startIndex;
-    for(int i = startIndex; data->stream[i] != '\0' && i < data->bits && j < maxLength; i++) {
-        c[j] = data->stream[i];
+    for(int i = startIndex; data->stream[i] != '\n' && i < data->bits && j < maxLength; i += 8) {
+        c[j] = 0;
+        for(int b = 0; b < 8; b++) {
+            c[j] |= (data->stream[i + b] << (7 - b));
+        }
         j++;
     }
 }
