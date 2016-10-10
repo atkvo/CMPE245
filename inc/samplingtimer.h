@@ -17,5 +17,6 @@ void samplerSetHz(int desiredHz);
 void samplerInit(int desiredHz);
 void samplerStart();
 void samplerStop();
+int getSampleRate();
 
 #endif

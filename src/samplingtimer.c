@@ -21,3 +21,13 @@ void samplerStop() {
     LPC_RIT->RICTRL &= ~(1 << RITEN);
     LPC_RIT->RICTRL &= ~(1 << RITENCLR);
 }
+
+int getSampleRate() {
+    if (LPC_RIT->RICOMPVAL > 0) {
+        int timerHz = SystemCoreClock/4;
+        return (timerHz/LPC_RIT->RICOMPVAL);
+    }
+    else {
+        return 0;
+    }
+}
