@@ -11,6 +11,7 @@
 #define RITENCLR 1
 #define RITEN    3
 #define PCRIT    16
+#define IS_SAMPLING (LPC_RIT->RICTRL & (1 << RITEN))
 
 void samplerSetHz(int desiredHz);
 void samplerInit(int desiredHz);
