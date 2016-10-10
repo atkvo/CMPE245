@@ -17,7 +17,7 @@ void clearBuffer(s_buff *buf) {
     buf->bits = 0;
 }
 
-void pushToBuffer(s_buff *buf, char c) {
+void pushToBufferBitByBit(s_buff *buf, char c) {
     if(buf->bits >= BUF_SIZE - 1) {
         clearBuffer(buf);
     }
@@ -25,6 +25,19 @@ void pushToBuffer(s_buff *buf, char c) {
         buf->stream[buf->bits] = ((c >> (7 - i)) & 0x01);
         buf->bits++;
     }
+}
+
+// 
+void pushBitToBuffer(s_buff *buf, char c) {
+    pushCharToBuffer(buf, c);
+}
+
+void pushCharToBuffer(s_buff *buf, char c) {
+    if(buf->bits >= BUF_SIZE - 1) {
+        clearBuffer(buf);
+    }
+    buf->stream[buf->bits] = c;
+    buf->bits++;
 }
 
 void p_generateSync(s_buff *sb, uint16_t bytes, int enableCorruption, int percentage) {
@@ -64,7 +77,7 @@ void addPayload(s_buff *sbuf, char * payload) {
     // int startIndex = sbuf->bits;
     for (int i = 0; payload[i] != '\0'; ++i)
     {
-        pushToBuffer(sbuf, payload[i]);
+        pushToBufferBitByBit(sbuf, payload[i]);
     }
 }
 
@@ -78,7 +91,7 @@ int scanForMatch(s_buff *window, s_buff *data, unsigned int minConfidence) {
     int currentHex = 0;
 
     // shift buffer and compare  to buffer
-    for(unsigned int shiftAmt = 0; shiftAmt < data->bits - 8; shiftAmt++) {
+    for(unsigned int shiftAmt = 0; shiftAmt < data->bits - window->bits; shiftAmt++) {
         // scanning window along buffer
         lastMatchedHexRead = 0;
         currentHex = 0;

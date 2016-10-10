@@ -20,7 +20,9 @@ enum SEPARATOR_TYPE {
 // buffer methods
 void initBuffer(s_buff *buf);
 void clearBuffer(s_buff *buf);
-void pushToBuffer(s_buff *buf, char c);
+void pushToBufferBitByBit(s_buff *buf, char c);
+void pushBitToBuffer(s_buff *buf, char c);
+void pushCharToBuffer(s_buff *buf, char c);
 
 void generateSync(s_buff *sb, uint16_t bytes);
 void generateCorruptedSync(s_buff *sb, uint16_t bytes, int seed);
