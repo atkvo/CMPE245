@@ -75,10 +75,13 @@ void generateCorruptedSync(s_buff *sb, uint16_t bytes, int percentage) {
 
 void addPayload(s_buff *sbuf, char * payload) {
     // int startIndex = sbuf->bits;
+    char lastAdded = 0;
     for (int i = 0; payload[i] != '\0'; ++i)
     {
         pushToBufferBitByBit(sbuf, payload[i]);
+        lastAdded = payload[i];
     }
+    if(lastAdded != '\n') { pushToBufferBitByBit(sbuf, '\n'); }
 }
 
 
