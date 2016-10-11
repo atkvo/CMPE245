@@ -87,13 +87,15 @@ void addPayload(s_buff *sbuf, char * payload) {
 
 // returns the index of payload within data->stream
 // returns -1 if minimum confidence isn't met
-int scanForMatch(s_buff *window, s_buff *data, unsigned int minConfidence) {
+int scanForMatch(s_buff *window, s_buff *data, int syncBytes, unsigned int minConfidence) {
     if(data->bits < window->bits) { return -1; }
     unsigned int bitHit = 0;
     unsigned int currentConfidence = 0;
     int lastMatchedHexRead = 0;
     int currentHex = 0;
 
+    int largestFirstHalf = 0x50 + ((syncBytes/2) - 1);
+    int largestSecondHalf = 0xa0 + ((syncBytes/2) - 1);
     // shift buffer and compare  to buffer
     for(unsigned int shiftAmt = 0; shiftAmt < data->bits - window->bits; shiftAmt++) {
         // scanning window along buffer
@@ -117,11 +119,11 @@ int scanForMatch(s_buff *window, s_buff *data, unsigned int minConfidence) {
                 if(currentConfidence >= minConfidence) {
                     int byteOffset = 0;
                     if((lastMatchedHexRead & 0xF0) == 0x50) {
-                        byteOffset = 0x5f - lastMatchedHexRead;
-                        byteOffset += 16;
+                        byteOffset = largestFirstHalf - lastMatchedHexRead;
+                        byteOffset += syncBytes/2;
                     }
                     else if((lastMatchedHexRead & 0xF0) == 0xa0) {
-                        byteOffset = 0xaf - lastMatchedHexRead;
+                        byteOffset = largestSecondHalf - lastMatchedHexRead;
                     }
                     else {
                         return -1;
