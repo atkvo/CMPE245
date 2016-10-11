@@ -7,20 +7,20 @@ s_buff txBuffer;
 s_buff rxBuffer;
 s_buff syncBuff;
 
-#define MIN_CONFIDENCE 2
+#define MIN_CONFIDENCE 1
 
 int main() {
     s_buff corruptedSync;
     generateSync(&syncBuff, 32);
 
-    addPayload(&rxBuffer, "G");
+    addPayload(&rxBuffer, "G4");
     generateSync(&rxBuffer, 32);
-    addPayload(&rxBuffer, "HELLO THE WORLD");
+    addPayload(&rxBuffer, "HELLO THE WORLD\n");
 
     initBuffer(&corruptedSync);
-    addPayload(&corruptedSync, "GBA");
-    generateCorruptedSync(&corruptedSync, 32, 10);
-    addPayload(&corruptedSync, "HELLO THE CORRUPTION");
+    addPayload(&corruptedSync, "Bkj9");
+    generateCorruptedSync(&corruptedSync, 32, 12);
+    addPayload(&corruptedSync, "HELLO THE CORRUPTION\n");
 
     printf("\nClean packet: ");
     printPacketHex(&rxBuffer, DASH);
