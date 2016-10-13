@@ -113,7 +113,7 @@ void UART3_IRQHandler(void) {
         else {
             char ch = uart_rx();
             if(ch == '\n') {
-                uprintf("%s\n", URX_BUF.stream);
+                uprintf("\n\t* %s\n", URX_BUF.stream);
                 if (strcmp(CMD_TIMER_START, URX_BUF.stream) == 0) {
                     samplerStart();
                 }
@@ -207,6 +207,7 @@ void UART3_IRQHandler(void) {
             }
             else if (ch != '\r') {
                 pushCharToBuffer(&URX_BUF, ch);
+                uprintf("%c", ch);
             }
         }
     }
