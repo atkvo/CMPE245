@@ -13,8 +13,10 @@ SRCS =   \
 	 
 # all the files will be generated with this name (main.elf, main.bin, main.hex, etc)
 
-PROJ_NAME=tx_test
+PROJ_NAME=lisa
 LPC_CORE=$(HOME)/dev/arm/LPC17XX_CORE
+
+# set this to the branch to push to
 LAB=lab1
 
 # that's it, no need to change anything below this line!
