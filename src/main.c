@@ -18,6 +18,7 @@
 
 int SYNC_BYTES      = 32;
 int MIN_CONFIDENCE  = 3;
+int ENABLE_EVENT_MSGS = 0;
 
 //#define URX_BUF_LEN             1024
 char RX_PAYLOAD[MAX_RX_LEN];
@@ -32,24 +33,26 @@ int LISTEN_EN_FLAG = 0;
 int RUN_TEST_FLAG = 0;
 
 const char GREET[] = "\n\t**** SYSTEM INITIALIZED ****\n";
-const char GREET_WAIT_CMD[] = "\n\t$ ";
-const char CMD_TIMER_START[] = ">S1";
-const char CMD_TIMER_STOP[] = ">S0";
-const char CMD_TIMER_QUERY[] = ">SR?";
-const char CMD_TIMER_SET[] = ">SR";
+const char GREET_WAIT_CMD[]             = "\n\t$ ";
+const char CMD_TIMER_START[]            = ">S1";
+const char CMD_TIMER_STOP[]             = ">S0";
+const char CMD_TIMER_QUERY[]            = ">SR?";
+const char CMD_TIMER_SET[]              = ">SR";
 const int CMD_TIMER_PARAM_INDEX = 3;
-const char CMD_SEND_PAYLOAD[] = ">TX";
-const char CMD_SET_CUSTOM_PAYLOAD[] = ">TXS";
+const char CMD_SEND_PAYLOAD[]           = ">TX";
+const char CMD_SET_CUSTOM_PAYLOAD[]     = ">TXS";
 const int CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX = 4;
-const char CMD_SET_TXPIN_HIGH[] = ">TXP1";
-const char CMD_SET_TXPIN_LOW[] = ">TXP0";
-const char CMD_SET_LISTEN_ON[] = ">L1";
-const char CMD_SET_LISTEN_OFF[] = ">L0";
-const char CMD_QUERY_LISTEN[] = ">L?";
-const char CMD_GET_CONFIDENCE[] = ">C?";
-const char CMD_SET_CONFIDNECE[] = ">C";
+const char CMD_SET_TXPIN_HIGH[]         = ">TXP1";
+const char CMD_SET_TXPIN_LOW[]          = ">TXP0";
+const char CMD_SET_LISTEN_ON[]          = ">L1";
+const char CMD_SET_LISTEN_OFF[]         = ">L0";
+const char CMD_QUERY_LISTEN[]           = ">L?";
+const char CMD_GET_CONFIDENCE[]         = ">C?";
+const char CMD_SET_CONFIDNECE[]         = ">C";
 const int CMD_SET_CONFIDENCE_PARAM_INDEX = 2;
-const char CMD_RUN_TEST[] = ">TEST";
+const char CMD_RUN_TEST[]               = ">TEST";
+const char CMD_DEBUG_ENABLE[]           = ">DE1";
+const char CMD_DEBUG_DISABLE[]          = ">DE0";
 
 
 int PAYLOAD_PUSH_INDEX = 0;
@@ -61,7 +64,7 @@ void RIT_IRQHandler(void) {
             PAYLOAD_PUSH_INDEX++;
         }
         else {
-            uprintf("\nEVENT: PAYLOAD TRANSMITTED\n");
+            if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: PAYLOAD TRANSMITTED\n");
             SEND_PAYLOAD_FLAG = 0;
             PAYLOAD_PUSH_INDEX = 0;
         }
@@ -74,7 +77,7 @@ void RIT_IRQHandler(void) {
             pushBitToBuffer(&RX_BUF, bit);
         } 
         else {
-            uprintf("\nEVENT: BUFFER FILLED\n");
+            if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: BUFFER FILLED\n");
             LISTEN_EN_FLAG = 0;
             EXTRACT_PAYLOAD_FLAG = 1;
             samplerStop();
@@ -166,6 +169,14 @@ void UART3_IRQHandler(void) {
                     uprintf("\n\tRunning local test.\n");
                     RUN_TEST_FLAG = 1;
                 }
+                else if (strcmp(CMD_DEBUG_ENABLE, URX_BUF.stream) == 0) {
+                    uprintf("\n\tEnabilng debug event messages.\n");
+                    ENABLE_EVENT_MSGS = 1;
+                }
+                else if (strcmp(CMD_DEBUG_DISABLE, URX_BUF.stream) == 0) {
+                    uprintf("\n\tDisabling debug event messages.\n");
+                    ENABLE_EVENT_MSGS = 0;
+                }
                 else {
                     uprintf("\n\tUNKNOWN COMMAND\n");
                 }
@@ -183,7 +194,7 @@ void UART3_IRQHandler(void) {
 int state = 0;
 void EINT3_IRQHandler() {
     if(IS_SAMPLING == false && LISTEN_EN_FLAG == 1) {
-        uprintf("\nEVENT: RX PIN TRIGGERED. STARTING SAMPLER\n");
+        if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: RX PIN TRIGGERED. STARTING SAMPLER\n");
         samplerStart();
     }
     state = state ? 0 : 1;
@@ -200,7 +211,7 @@ void initializeBuffers() {
     addPayload(&PAYLOAD, "ANDREW5295\n");
 
     initBuffer(&TEST_RX_BUF);
-    addPayload(&TEST_RX_BUF, "SOMEFILLERSHIT\n");
+    addPayload(&TEST_RX_BUF, "SOMEFILLER\n");
     generateSync(&TEST_RX_BUF, 32);
     addPayload(&TEST_RX_BUF, "TESTANDREW5295\n");
 
@@ -237,13 +248,13 @@ int main(void)
                 else {
                     uprintf("\n\tPAYLOAD INDEX INVALID: %i\n", payloadIndex);
                 }
-                uprintf("\nEVENT: Test is done.\n");
+                if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: Test is done.\n");
                 RUN_TEST_FLAG = 0;
                 payloadIndex = 0;
             }
             else {
                 memset(RX_PAYLOAD, 0, MAX_RX_LEN);
-                uprintf("\nEVENT: BEGINNING EXTRACTION\n");
+                if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: BEGINNING EXTRACTION\n");
                 payloadIndex = scanForMatch(&WINDOW, &RX_BUF, SYNC_BYTES, MIN_CONFIDENCE);
                 if(payloadIndex > 0) {
                     uprintf("\n\tPAYLOAD @ %i\n", payloadIndex);
@@ -253,7 +264,7 @@ int main(void)
                 else {
                     uprintf("\n\tPAYLOAD INDEX INVALID: %i\n", payloadIndex);
                 }
-                uprintf("\nEVENT: EXTRACTION DONE. CLEARING RX BUFFER\n");
+                if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: EXTRACTION DONE. CLEARING RX BUFFER\n");
                 clearBuffer(&RX_BUF);
                 payloadIndex = 0;
                 EXTRACT_PAYLOAD_FLAG = 0;
