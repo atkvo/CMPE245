@@ -29,7 +29,7 @@ void generateCorruptedSync(s_buff *sb, uint16_t bytes, int seed);
 
 void addPayload(s_buff *sbuf, char * payload);
 
-int scanForMatch(s_buff *window, s_buff *data, unsigned int minConfidence);
+int scanForMatch(s_buff *window, s_buff *data, int syncBytes, unsigned int minConfidence);
 void extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength);
 
 void printPacket(s_buff *b);
