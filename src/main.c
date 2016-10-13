@@ -53,6 +53,23 @@ const int CMD_SET_CONFIDENCE_PARAM_INDEX = 2;
 const char CMD_RUN_TEST[]               = ">TEST";
 const char CMD_DEBUG_ENABLE[]           = ">DE1";
 const char CMD_DEBUG_DISABLE[]          = ">DE0";
+const char CMD_LIST_QUERY[]             = ">?";
+const char CMD_LIST[] = 
+                "\n\tAvailable Commands\n"
+                "\t----------------------\n"
+                "\t>Sx  \tSample start/stop\n"
+                "\t>SRx \tSample rate set\n"
+                "\t>SR? \tSample rate query\n"
+                "\t>SRnn\tSample rate set\n"
+                "\t>TX  \tSend payload\n"
+                "\t>TXS \tSet payload\n"
+                "\t>TXPn\tSet TX pin 1 or 0\n"
+                "\t>Ln  \tSet listener 1 or 0\n"
+                "\t>L?  \tQuery listener state\n"
+                "\t>C?  \tGet minimum confidence\n"
+                "\t>Cn  \tSet minimum confidence\n"
+                "\t>TEST\tRun internal test\n"
+                "\t>DEn \tEnable disable debug event messages\n\n";
 
 
 int PAYLOAD_PUSH_INDEX = 0;
@@ -96,7 +113,7 @@ void UART3_IRQHandler(void) {
         else {
             char ch = uart_rx();
             if(ch == '\n') {
-                uprintf("\tACK: %s\n", URX_BUF.stream);
+                uprintf("%s\n", URX_BUF.stream);
                 if (strcmp(CMD_TIMER_START, URX_BUF.stream) == 0) {
                     samplerStart();
                 }
@@ -175,6 +192,10 @@ void UART3_IRQHandler(void) {
                 }
                 else if (strcmp(CMD_DEBUG_DISABLE, URX_BUF.stream) == 0) {
                     uprintf("\n\tDisabling debug event messages.\n");
+                    ENABLE_EVENT_MSGS = 0;
+                }
+                else if (strcmp(CMD_LIST_QUERY, URX_BUF.stream) == 0) {
+                    uprintf("\n%s\n", CMD_LIST);
                     ENABLE_EVENT_MSGS = 0;
                 }
                 else {
