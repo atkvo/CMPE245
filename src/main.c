@@ -16,7 +16,8 @@
 #define MAX_RX_LEN       1024
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
 
-int MIN_CONFIDENCE = 3;
+int SYNC_BYTES      = 32;
+int MIN_CONFIDENCE  = 3;
 
 //#define URX_BUF_LEN             1024
 char RX_PAYLOAD[MAX_RX_LEN];
@@ -227,7 +228,7 @@ int main(void)
     while(1) {
         if(EXTRACT_PAYLOAD_FLAG == 1 || RUN_TEST_FLAG == 1) {
             if(RUN_TEST_FLAG == 1) {
-                payloadIndex = scanForMatch(&WINDOW, &TEST_RX_BUF, MIN_CONFIDENCE);
+                payloadIndex = scanForMatch(&WINDOW, &TEST_RX_BUF, SYNC_BYTES, MIN_CONFIDENCE);
                 if(payloadIndex > 0) {
                     uprintf("\n\tPAYLOAD @ %i\n", payloadIndex);
                     extractPayload(&TEST_RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN);
@@ -243,7 +244,7 @@ int main(void)
             else {
                 memset(RX_PAYLOAD, 0, MAX_RX_LEN);
                 uprintf("\nEVENT: BEGINNING EXTRACTION\n");
-                payloadIndex = scanForMatch(&WINDOW, &RX_BUF, MIN_CONFIDENCE);
+                payloadIndex = scanForMatch(&WINDOW, &RX_BUF, SYNC_BYTES, MIN_CONFIDENCE);
                 if(payloadIndex > 0) {
                     uprintf("\n\tPAYLOAD @ %i\n", payloadIndex);
                     extractPayload(&RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN);
