@@ -21,7 +21,7 @@ int main() {
 
     initBuffer(&corruptedSync);
     addPayload(&corruptedSync, "Bkj9");
-    generateCorruptedSync(&corruptedSync, SYNC_BYTES, 12);
+    generateCorruptedSync(&corruptedSync, SYNC_BYTES, 5);
     addPayload(&corruptedSync, "HELLO THE CORRUPTION\n");
 
     printf("\nClean packet: ");
@@ -61,15 +61,30 @@ int main() {
     unsigned long len;
     while(1) {
         clearBuffer(&txBuffer);
+        clearBuffer(&syncBuff);
         memset(payload, 0, 1024);
-        printf("\nEnter corruption percentage (>10)");
+
         printf("\nEnter number of sync bytes: ");
+        read = getline(&userload, &len, stdin);
+        syncbytes = atoi(userload);
+        generateSync(&syncBuff, syncbytes);
+        printf("\n\tSync bytes: %i", syncbytes);
+
+        printf("\nEnter corruption percentage (>10): ");
+        read = getline(&userload, &len, stdin);
+        corruption = atoi(userload);
         generateCorruptedSync(&txBuffer, syncbytes, corruption);
+        printPacketHex(&txBuffer, DASH);
+
         printf("\nEnter minimum confidence: ");
+        read = getline(&userload, &len, stdin);
+        confidence = atoi(userload);
+
         printf("\nEnter payload: ");
         read = getline(&userload, &len, stdin);
         addPayload(&txBuffer, userload);
-        int matchIndex = scanForMatch(&syncBuff, &txBuffer, 32, confidence);
+
+        int matchIndex = scanForMatch(&syncBuff, &txBuffer, syncbytes, confidence);
         if(matchIndex > 0) {
             extractPayload(&txBuffer, payload, matchIndex, 1024);
             printf("\nPAYLOAD @ %i: %s", matchIndex, payload);
