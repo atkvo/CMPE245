@@ -44,10 +44,10 @@ void p_generateSync(s_buff *sb, uint16_t bytes, int enableCorruption, int percen
     char tmp = 0;
     int offset = sb->bits > 0 ? sb->bits : 0;
     bool corrupt = false;
-    int ratio = percentage/10;
+    // int ratio = percentage/10;
     for(int i = 0; i < bytes; i++) {
         for(int b = 7; b >= 0; b--) {
-            if( ((rand() % (12 + 1)) < ratio)) {
+            if( ((rand() % (101)) < percentage)) {
                 corrupt = true;
             }
             else { corrupt = false; }
