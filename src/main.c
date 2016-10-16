@@ -28,9 +28,11 @@ s_buff TEST_RX_BUF;
 s_buff WINDOW;
 s_buff PAYLOAD;
 int SEND_PAYLOAD_FLAG = 0;
+int REPEAT_SEND_FLAG = 0;
 int EXTRACT_PAYLOAD_FLAG = 0;
 int LISTEN_EN_FLAG = 0;
 int RUN_TEST_FLAG = 0;
+int TX_LOOP_FLAG = 0;
 
 const char GREET[] = "\n\t**** SYSTEM INITIALIZED ****\n";
 const char GREET_WAIT_CMD[]             = "\n\t$ ";
@@ -42,6 +44,8 @@ const int CMD_TIMER_PARAM_INDEX = 3;
 const char CMD_SEND_PAYLOAD[]           = ">TX";
 const char CMD_SET_CUSTOM_PAYLOAD[]     = ">TXS";
 const int CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX = 4;
+const char CMD_SET_TXLOOP_ON[]          = ">TXL1";
+const char CMD_SET_TXLOOP_OFF[]         = ">TXL0";
 const char CMD_SET_TXPIN_HIGH[]         = ">TXP1";
 const char CMD_SET_TXPIN_LOW[]          = ">TXP0";
 const char CMD_SET_LISTEN_ON[]          = ">L1";
@@ -64,6 +68,7 @@ const char CMD_LIST[] =
                 "\t>TX  \tSend payload\n"
                 "\t>TXS \tSet payload\n"
                 "\t>TXPn\tSet TX pin 1 or 0\n"
+                "\t>TXLn\tSet TX pin 1 or 0\n"
                 "\t>Ln  \tSet listener 1 or 0\n"
                 "\t>L?  \tQuery listener state\n"
                 "\t>C?  \tGet minimum confidence\n"
@@ -82,7 +87,9 @@ void RIT_IRQHandler(void) {
         }
         else {
             if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: PAYLOAD TRANSMITTED\n");
-            SEND_PAYLOAD_FLAG = 0;
+            if(TX_LOOP_FLAG == 0) {
+                SEND_PAYLOAD_FLAG = 0;
+            }
             PAYLOAD_PUSH_INDEX = 0;
         }
     }
@@ -97,7 +104,9 @@ void RIT_IRQHandler(void) {
             if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: BUFFER FILLED\n");
             LISTEN_EN_FLAG = 0;
             EXTRACT_PAYLOAD_FLAG = 1;
-            samplerStop();
+            if(TX_LOOP_FLAG == 0) {
+                samplerStop();
+            }
         }
     } 
     // clear the interrupt by setting 1
@@ -170,6 +179,14 @@ void UART3_IRQHandler(void) {
                     uprintf("\n\tSetting TX pin LOW   (0)\n");
                     setTx(0);
                 }
+                else if (strcmp(CMD_SET_TXLOOP_ON, URX_BUF.stream) == 0) {
+                    uprintf("\n\tSetting TX loop ON   (1)\n");
+                    TX_LOOP_FLAG = 1;
+                }
+                else if (strcmp(CMD_SET_TXLOOP_OFF, URX_BUF.stream) == 0) {
+                    uprintf("\n\tSetting TX loop OFF  (0)\n");
+                    TX_LOOP_FLAG = 0;
+                }
                 else if (strcmp(CMD_SEND_PAYLOAD, URX_BUF.stream) == 0) {
                     SEND_PAYLOAD_FLAG = 1;
                     if(IS_SAMPLING == 0) { samplerStart(); }
@@ -187,7 +204,6 @@ void UART3_IRQHandler(void) {
                     RUN_TEST_FLAG = 1;
                 }
                 else if (strcmp(CMD_DEBUG_ENABLE, URX_BUF.stream) == 0) {
-                    uprintf("\n\tEnabilng debug event messages.\n");
                     ENABLE_EVENT_MSGS = 1;
                 }
                 else if (strcmp(CMD_DEBUG_DISABLE, URX_BUF.stream) == 0) {
