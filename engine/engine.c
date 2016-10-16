@@ -146,12 +146,18 @@ int scanForMatch(s_buff *window, s_buff *data, int syncBytes, unsigned int minCo
 
 void extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength) {
     int j = 0;
-    for(int i = startIndex; data->stream[i] != '\n' && i < data->bits && j < maxLength; i += 8) {
+    for(int i = startIndex; c[j] != '\n' && i < data->bits && j < maxLength; i += 8) {
         c[j] = 0;
         for(int b = 0; b < 8; b++) {
             c[j] |= (data->stream[i + b] << (7 - b));
         }
-        j++;
+        if(c[j] == '\n') {
+            c[j + 1] = '\0';
+            break;
+        }
+        else {
+            j++;
+        }
     }
 }
 
