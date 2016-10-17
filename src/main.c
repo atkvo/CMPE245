@@ -27,12 +27,15 @@ s_buff RX_BUF;
 s_buff TEST_RX_BUF;
 s_buff WINDOW;
 s_buff PAYLOAD;
-int SEND_PAYLOAD_FLAG = 0;
-int REPEAT_SEND_FLAG = 0;
-int EXTRACT_PAYLOAD_FLAG = 0;
-int LISTEN_EN_FLAG = 0;
-int RUN_TEST_FLAG = 0;
-int TX_LOOP_FLAG = 0;
+
+int SEND_PAYLOAD_FLAG       = 0;
+int REPEAT_SEND_FLAG        = 0;
+int EXTRACT_PAYLOAD_FLAG    = 0;
+int LISTEN_EN_FLAG          = 0;
+int RUN_TEST_FLAG           = 0;
+int TX_LOOP_FLAG            = 0;
+int ACK_FLAG                = 0;
+int MULTI_LANE_FLAG         = 0;    // allows for TX + RX at the same time (loopback)
 
 const char GREET[] = "\n\t**** SYSTEM INITIALIZED ****\n";
 const char GREET_WAIT_CMD[]             = "\n\t$ ";
@@ -48,6 +51,9 @@ const char CMD_SET_TXLOOP_ON[]          = ">TXL1";
 const char CMD_SET_TXLOOP_OFF[]         = ">TXL0";
 const char CMD_SET_TXPIN_HIGH[]         = ">TXP1";
 const char CMD_SET_TXPIN_LOW[]          = ">TXP0";
+const char CMD_SET_ACK_ON[]             = ">ACK1";
+const char CMD_SET_ACK_OFF[]            = ">ACK0";
+const char CMD_QUERY_ACK[]              = ">ACK?";
 const char CMD_SET_LISTEN_ON[]          = ">L1";
 const char CMD_SET_LISTEN_OFF[]         = ">L0";
 const char CMD_QUERY_LISTEN[]           = ">L?";
@@ -68,7 +74,9 @@ const char CMD_LIST[] =
                 "\t>TX  \tSend payload\n"
                 "\t>TXS \tSet payload\n"
                 "\t>TXPn\tSet TX pin 1 or 0\n"
-                "\t>TXLn\tSet TX pin 1 or 0\n"
+                "\t>TXLn\tSet TX loop 1 or 0\n"
+                "\t>ACKn\tEnable or disbabe ack (1 or 0)\n"
+                "\t>ACK?\tQuery ACK state\n"
                 "\t>Ln  \tSet listener 1 or 0\n"
                 "\t>L?  \tQuery listener state\n"
                 "\t>C?  \tGet minimum confidence\n"
@@ -113,6 +121,11 @@ void RIT_IRQHandler(void) {
     LPC_RIT->RICTRL |= (1 << RITINT);
 }
 
+
+void sendPayload() {
+    SEND_PAYLOAD_FLAG = 1;
+    if(IS_SAMPLING == 0) { samplerStart(); }
+}
 void UART3_IRQHandler(void) {
     if ((LPC_UART3->IIR & U_IIR_RDA_INT_ID) == U_IIR_RDA_INT_ID) {
         if(URX_BUF.bits >= (BUF_SIZE - 1)) {
@@ -187,9 +200,19 @@ void UART3_IRQHandler(void) {
                     uprintf("\n\tSetting TX loop OFF  (0)\n");
                     TX_LOOP_FLAG = 0;
                 }
+                else if (strcmp(CMD_SET_ACK_ON, URX_BUF.stream) == 0) {
+                    uprintf("\n\tSetting Auto ACK ON  (1)\n");
+                    ACK_FLAG = 1;
+                }
+                else if (strcmp(CMD_SET_ACK_OFF, URX_BUF.stream) == 0) {
+                    uprintf("\n\tSetting Auto ACK OFF (0)\n");
+                    ACK_FLAG = 0;
+                }
+                else if (strcmp(CMD_QUERY_ACK, URX_BUF.stream) == 0) {
+                    uprintf("\n\tACK is %i\n", ACK_FLAG);
+                }
                 else if (strcmp(CMD_SEND_PAYLOAD, URX_BUF.stream) == 0) {
-                    SEND_PAYLOAD_FLAG = 1;
-                    if(IS_SAMPLING == 0) { samplerStart(); }
+                    sendPayload();
                 }
                 else if (strstr(URX_BUF.stream, CMD_SET_CUSTOM_PAYLOAD) != NULL) {
                     if(URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX] != '\0') {
@@ -304,10 +327,11 @@ int main(void)
                 }
                 if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: EXTRACTION DONE. CLEARING RX BUFFER\n");
                 clearBuffer(&RX_BUF);
-                payloadIndex = 0;
                 EXTRACT_PAYLOAD_FLAG = 0;
+                payloadIndex = 0;
                 uprintf(GREET_WAIT_CMD);
                 LISTEN_EN_FLAG = 1;
+                if(ACK_FLAG) { sendPayload(); }
             }
         }
         // rxChar = uart_rx();
