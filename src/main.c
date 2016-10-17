@@ -35,7 +35,7 @@ int LISTEN_EN_FLAG          = 0;
 int RUN_TEST_FLAG           = 0;
 int TX_LOOP_FLAG            = 0;
 int ACK_FLAG                = 0;
-int MULTI_LANE_FLAG         = 0;    // allows for TX + RX at the same time (loopback)
+int TWO_WAY_FLAG            = 0;    // allows for TX + RX at the same time (loopback)
 
 const char GREET[] = "\n\t**** SYSTEM INITIALIZED ****\n";
 const char GREET_WAIT_CMD[]             = "\n\t$ ";
@@ -59,6 +59,9 @@ const char CMD_SET_LISTEN_OFF[]         = ">L0";
 const char CMD_QUERY_LISTEN[]           = ">L?";
 const char CMD_GET_CONFIDENCE[]         = ">C?";
 const char CMD_SET_CONFIDNECE[]         = ">C";
+const char CMD_SET_TWO_WAY_ON[]         = ">TL1";
+const char CMD_SET_TWO_WAY_OFF[]        = ">TL0";
+const char CMD_GET_TWO_WAY[]            = ">TL?";
 const int CMD_SET_CONFIDENCE_PARAM_INDEX = 2;
 const char CMD_RUN_TEST[]               = ">TEST";
 const char CMD_DEBUG_ENABLE[]           = ">DE1";
@@ -81,6 +84,8 @@ const char CMD_LIST[] =
                 "\t>L?  \tQuery listener state\n"
                 "\t>C?  \tGet minimum confidence\n"
                 "\t>Cn  \tSet minimum confidence\n"
+                "\t>TLn \tSet two-lane mode (TX + RX simultaneously) (1 or 0)\n"
+                "\t>TL? \tGet two-lane mode\n"
                 "\t>TEST\tRun internal test\n"
                 "\t>DEn \tEnable disable debug event messages\n\n";
 
@@ -101,7 +106,7 @@ void RIT_IRQHandler(void) {
             PAYLOAD_PUSH_INDEX = 0;
         }
     }
-    if(LISTEN_EN_FLAG) {
+    if(LISTEN_EN_FLAG && (TWO_WAY_FLAG || SEND_PAYLOAD_FLAG == 0)) {
         if(RX_BUF.bits < MAX_RX_LEN - 1) {
             int bit = readRxPin();
             // uprintf("  RX: %i -- bits: %i\r\n", bit, RX_BUF.bits);
@@ -225,6 +230,17 @@ void UART3_IRQHandler(void) {
                 else if (strcmp(CMD_RUN_TEST, URX_BUF.stream) == 0) {
                     uprintf("\n\tRunning local test.\n");
                     RUN_TEST_FLAG = 1;
+                }
+                else if (strcmp(CMD_SET_TWO_WAY_ON, URX_BUF.stream) == 0) {
+                    uprintf("\n\tSetting Two Way Mode (1)\n");
+                    TWO_WAY_FLAG = 1;
+                }
+                else if (strcmp(CMD_SET_TWO_WAY_OFF, URX_BUF.stream) == 0) {
+                    uprintf("\n\tSetting Two Way Mode (0)\n");
+                    TWO_WAY_FLAG = 0;
+                }
+                else if (strcmp(CMD_GET_TWO_WAY, URX_BUF.stream) == 0) {
+                    uprintf("\n\tTwo Way Mode: %i\n", TWO_WAY_FLAG);
                 }
                 else if (strcmp(CMD_DEBUG_ENABLE, URX_BUF.stream) == 0) {
                     ENABLE_EVENT_MSGS = 1;
