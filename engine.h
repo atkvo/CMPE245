@@ -34,3 +34,6 @@ void extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLengt
 
 void printPacket(s_buff *b);
 void printPacketHex(s_buff *b, enum SEPARATOR_TYPE sepType);
+
+void scramble(char *c, int length, int order);
+void descramble(char *c, int length, int order);
