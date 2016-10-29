@@ -1,5 +1,6 @@
 PROJNAME = engine
-SRCS = engine.c main.c
+# SRCS = engine.c main.c
+SRCS = engine.c scramblingtest.c
 
 CC = gcc
 
