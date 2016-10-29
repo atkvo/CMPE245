@@ -198,3 +198,26 @@ void printPacketHex(s_buff *b, enum SEPARATOR_TYPE sepType) {
         ch &= 0;
     }
 }
+
+void pushInFront(char value, char *arr, int arrayLength) {
+    for(int i = (arrayLength - 1); i > 0; i--) {
+        arr[i] = arr[i-1];
+    }
+    arr[0] = value;
+}
+
+void scramble(char *c, int length, int order) {
+    char * delayBuffer;
+    char tmp;
+    delayBuffer = (char*) malloc(order);
+    memset(delayBuffer, 0, (order + 1));
+    for(int i = 0; c[i] != '\n' && i < length; i++) {
+        tmp = delayBuffer[order - 1] ^ delayBuffer[(order/2)];
+        c[i] = c[i] ^ tmp;
+        pushInFront(c[i], delayBuffer, order);
+    }
+}
+
+void descramble(char *c, int length, int order) {
+
+}
