@@ -210,14 +210,24 @@ void scramble(char *c, int length, int order) {
     char * delayBuffer;
     char tmp;
     delayBuffer = (char*) malloc(order);
-    memset(delayBuffer, 0, (order + 1));
+    memset(delayBuffer, 0, (order));
     for(int i = 0; c[i] != '\n' && i < length; i++) {
         tmp = delayBuffer[order - 1] ^ delayBuffer[(order/2)];
         c[i] = c[i] ^ tmp;
         pushInFront(c[i], delayBuffer, order);
     }
+    free(delayBuffer);
 }
 
 void descramble(char *c, int length, int order) {
-
+    char * delayBuffer;
+    char tmp;
+    delayBuffer = (char*) malloc(order + 1);
+    memset(delayBuffer, 0, (order + 1));
+    for(int i = 0; c[i] != '\n' && i < length; i++) {
+        pushInFront(c[i], delayBuffer, order);
+        tmp = delayBuffer[order - 1] ^ delayBuffer[(order/2)];
+        c[i] = c[i] ^ tmp;
+    }
+    free(delayBuffer);
 }
