@@ -222,11 +222,14 @@ void scramble(char *c, int length, int order) {
 void descramble(char *c, int length, int order) {
     char * delayBuffer;
     char tmp;
+    
+    // add an extra element to buffer to make room 
+    // for the "wire" between major delay blocks
     delayBuffer = (char*) malloc(order + 1);
     memset(delayBuffer, 0, (order + 1));
     for(int i = 0; c[i] != '\n' && i < length; i++) {
-        pushInFront(c[i], delayBuffer, order);
-        tmp = delayBuffer[order - 1] ^ delayBuffer[(order/2)];
+        pushInFront(c[i], delayBuffer, order + 1);
+        tmp = delayBuffer[order - 0] ^ delayBuffer[(order/2) + 1];
         c[i] = c[i] ^ tmp;
     }
     free(delayBuffer);
