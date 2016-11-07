@@ -7,7 +7,8 @@ s_buff txBuffer;
 s_buff rxBuffer;
 s_buff syncBuff;
 
-#define MIN_CONFIDENCE 2
+int MIN_CONFIDENCE = 4; 
+int SYNC_BYTES = 32;
 
 int main() {
     s_buff corruptedSync;
