@@ -17,7 +17,7 @@ PROJ_NAME=lisa
 LPC_CORE=$(HOME)/dev/arm/LPC17XX_CORE
 
 # set this to the branch to push to
-LAB=lab1
+LAB=lab2
 
 # that's it, no need to change anything below this line!
 
@@ -99,6 +99,6 @@ gdbconnect:
 	arm-none-eabi-gdb --eval-command="target remote localhost:3333 && tui enable" $(PROJ_NAME).elf
 
 pushtobranch:
-	git push origin master:$(LAB)
+	git push origin $(LAB):$(LAB)
 
 print-%: ; @echo $*=$($*)
