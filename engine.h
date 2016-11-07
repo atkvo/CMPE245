@@ -30,10 +30,13 @@ void generateCorruptedSync(s_buff *sb, uint16_t bytes, int seed);
 void addPayload(s_buff *sbuf, char * payload);
 
 int scanForMatch(s_buff *window, s_buff *data, int syncBytes, unsigned int minConfidence);
-void extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength);
+int extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength);
 
 void printPacket(s_buff *b);
 void printPacketHex(s_buff *b, enum SEPARATOR_TYPE sepType);
 
-void scramble(char *c, int length, int order);
-void descramble(char *c, int length, int order);
+void scrambleEl(char *c, int length, int order);
+void descrambleEl(char *c, int length, int order);
+
+void scrambleBits(char *c, int length, int order);
+void descrambleBits(char *c, int length, int order);

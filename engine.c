@@ -143,7 +143,7 @@ int scanForMatch(s_buff *window, s_buff *data, int syncBytes, unsigned int minCo
     return -1;
 }
 
-void extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength) {
+int extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength) {
     int j = 0;
     for(int i = startIndex; c[j] != '\n' && i < data->bits && j < maxLength; i += 8) {
         c[j] = 0;
@@ -158,6 +158,7 @@ void extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLengt
             j++;
         }
     }
+    return j;
 }
 
 void printPacket(s_buff *b) {
@@ -206,7 +207,7 @@ void pushInFront(char value, char *arr, int arrayLength) {
     arr[0] = value;
 }
 
-void scramble(char *c, int length, int order) {
+void scrambleElements(char *c, int length, int order) {
     char * delayBuffer;
     char tmp;
     delayBuffer = (char*) malloc(order);
@@ -219,7 +220,41 @@ void scramble(char *c, int length, int order) {
     free(delayBuffer);
 }
 
-void descramble(char *c, int length, int order) {
+// scramble bits from MSB to LSB
+void scrambleBits(char *c, int length, int order) {
+    char * delayBuffer;
+    char tmp;
+    delayBuffer = (char*) malloc(order*8);
+    memset(delayBuffer, 0, (order*8));
+    for(int i = 0; c[i] != '\n' && i < length; i++) {
+        for(int j = 7; j >= 0; j--){
+            tmp = delayBuffer[order - 1] ^ delayBuffer[(order/2)];
+            c[i] = c[i] ^ (tmp << j);
+            // pushInFront(c[i], delayBuffer, order);
+            pushInFront(((0x01 << j) & c[i]) ? 1 : 0, delayBuffer, order);
+        }
+    }
+    free(delayBuffer);
+}
+void descrambleBits(char *c, int length, int order) { 
+    char * delayBuffer;
+    char tmp;
+    
+    // add an extra element to buffer to make room 
+    // for the "wire" between major delay blocks
+    delayBuffer = (char*) malloc((order + 1)*8);
+    memset(delayBuffer, 0, (order + 1)*8);
+    for(int i = 0; c[i] != '\n' && i < length; i++) {
+        for(int j = 7; j >= 0; j--) {
+            pushInFront(((0x01 << j) & c[i]) ? 1 : 0, delayBuffer, order + 1);
+            tmp = delayBuffer[order - 0] ^ delayBuffer[(order/2) + 1];
+            c[i] = c[i] ^ (tmp << j);
+        }
+    }
+    free(delayBuffer);
+}
+
+void descrambleElements(char *c, int length, int order) { 
     char * delayBuffer;
     char tmp;
     
