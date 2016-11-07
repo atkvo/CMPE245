@@ -19,6 +19,7 @@
 int SYNC_BYTES      = 32;
 int MIN_CONFIDENCE  = 3;
 int ENABLE_EVENT_MSGS = 0;
+int SCRAMBLE_ORDER = 7;
 
 //#define URX_BUF_LEN             1024
 char RX_PAYLOAD[MAX_RX_LEN];
@@ -35,6 +36,7 @@ int LISTEN_EN_FLAG          = 0;
 int RUN_TEST_FLAG           = 0;
 int TX_LOOP_FLAG            = 0;
 int ACK_FLAG                = 0;
+int SCRAMBLE_FLAG           = 0;
 int TWO_WAY_FLAG            = 0;    // allows for TX + RX at the same time (loopback)
 
 const char GREET[] = "\n\t**** SYSTEM INITIALIZED ****\n";
@@ -54,6 +56,11 @@ const char CMD_SET_TXPIN_LOW[]          = ">TXP0";
 const char CMD_SET_ACK_ON[]             = ">ACK1";
 const char CMD_SET_ACK_OFF[]            = ">ACK0";
 const char CMD_QUERY_ACK[]              = ">ACK?";
+
+const char CMD_SET_SCRAMBLE_ON[]        = ">SCR1";
+const char CMD_SET_SCRAMBLE_OFF[]       = ">SCR0";
+const char CMD_QUERY_SCRAMBLE[]         = ">SCR?";
+
 const char CMD_SET_LISTEN_ON[]          = ">L1";
 const char CMD_SET_LISTEN_OFF[]         = ">L0";
 const char CMD_QUERY_LISTEN[]           = ">L?";
@@ -78,8 +85,10 @@ const char CMD_LIST[] =
                 "\t>TXS \tSet payload\n"
                 "\t>TXPn\tSet TX pin 1 or 0\n"
                 "\t>TXLn\tSet TX loop 1 or 0\n"
-                "\t>ACKn\tEnable or disbabe ack (1 or 0)\n"
+                "\t>ACKn\tEnable or disbable ack (1 or 0)\n"
                 "\t>ACK?\tQuery ACK state\n"
+                "\t>SCRn\tEnable or disbable scrambling (1 or 0)\n"
+                "\t>SCR?\tQuery SCRAMBLE state\n"
                 "\t>Ln  \tSet listener 1 or 0\n"
                 "\t>L?  \tQuery listener state\n"
                 "\t>C?  \tGet minimum confidence\n"
@@ -213,6 +222,14 @@ void UART3_IRQHandler(void) {
                     uprintf("\n\tSetting Auto ACK OFF (0)\n");
                     ACK_FLAG = 0;
                 }
+                else if (strcmp(CMD_SET_SCRAMBLE_ON, URX_BUF.stream) == 0) {
+                    uprintf("\n\tSetting SCRAMBLE ON  (1)\n");
+                    SCRAMBLE_FLAG = 1;
+                }
+                else if (strcmp(CMD_SET_SCRAMBLE_OFF, URX_BUF.stream) == 0) {
+                    uprintf("\n\tSetting SCRAMBLE OFF (0)\n");
+                    SCRAMBLE_FLAG = 0;
+                }
                 else if (strcmp(CMD_QUERY_ACK, URX_BUF.stream) == 0) {
                     uprintf("\n\tACK is %i\n", ACK_FLAG);
                 }
@@ -221,10 +238,15 @@ void UART3_IRQHandler(void) {
                 }
                 else if (strstr(URX_BUF.stream, CMD_SET_CUSTOM_PAYLOAD) != NULL) {
                     if(URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX] != '\0') {
+                        uprintf("\n\tNew payload: %s\n", &URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX]);
                         clearBuffer(&PAYLOAD);
                         generateSync(&PAYLOAD, 32);
+                        if(SCRAMBLE_FLAG) {
+                            int len = 0;
+                            len = strlen(&URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX]);
+                            scrambleBits(&URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX], len, SCRAMBLE_ORDER);
+                        }
                         addPayload(&PAYLOAD, &URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX]);
-                        uprintf("\n\tNew payload: %s\n", &URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX]);
                     }
                 }
                 else if (strcmp(CMD_RUN_TEST, URX_BUF.stream) == 0) {
@@ -313,6 +335,7 @@ int main(void)
     uprintf(GREET_WAIT_CMD);
 
     int payloadIndex = 0;
+    int payloadLength = 0;
     while(1) {
         if(EXTRACT_PAYLOAD_FLAG == 1 || RUN_TEST_FLAG == 1) {
             if(RUN_TEST_FLAG == 1) {
@@ -335,17 +358,23 @@ int main(void)
                 payloadIndex = scanForMatch(&WINDOW, &RX_BUF, SYNC_BYTES, MIN_CONFIDENCE);
                 if(payloadIndex > 0) {
                     uprintf("\n\tPAYLOAD @ %i\n", payloadIndex);
-                    extractPayload(&RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN);
+                    payloadLength = extractPayload(&RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN);
+                    if(SCRAMBLE_FLAG) {
+                        descrambleBits(RX_PAYLOAD, payloadLength*8, SCRAMBLE_ORDER);
+                    }
                     uprintf("\tPAYLOAD: %s", RX_PAYLOAD);
+                    uprintf(GREET_WAIT_CMD);
                 }
                 else {
-                    uprintf("\n\tPAYLOAD INDEX INVALID: %i\n", payloadIndex);
+                    if( ENABLE_EVENT_MSGS ) { 
+                        uprintf("\n\tPAYLOAD INDEX INVALID: %i\n", payloadIndex);
+                        uprintf(GREET_WAIT_CMD);
+                    }
                 }
                 if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: EXTRACTION DONE. CLEARING RX BUFFER\n");
                 clearBuffer(&RX_BUF);
                 EXTRACT_PAYLOAD_FLAG = 0;
                 payloadIndex = 0;
-                uprintf(GREET_WAIT_CMD);
                 LISTEN_EN_FLAG = 1;
                 if(ACK_FLAG) { sendPayload(); }
             }
