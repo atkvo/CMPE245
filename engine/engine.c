@@ -219,18 +219,58 @@ void scrambleElements(char *c, int length, int order) {
     }
     free(delayBuffer);
 }
+void printBinary(uint8_t num) {
+    //printf("0b");
+    uint8_t temp = 0;
+    for (int8_t i=7;i>=0;i--) {
+        temp=num;
+        temp>>=i;
+        temp &= 0x01;
+        printf("%d", temp);
+    }
+}
+void printArrayBin(uint8_t *data, uint32_t dataSize) {
+//    printf("ARRAY: ");
+    static int32_t row = 1;
+    row = 1;
+    for (int i = 0; i < dataSize; i++) {
+        printBinary(data[i]);
+        printf(" ");
+        if (row == 0) {
+            printf("\n");
+        }
+        row = (row +1) % 8;
+    }
+}
+
+void printArrayBinMSB(uint8_t *data, uint32_t dataSize) {
+    //    printf("ARRAY: ");
+    static int32_t row = 1;
+    row = 1;
+    for (int i = dataSize-1; i >= 0; i--) {
+        printBinary(data[i]);
+        printf(" ");
+        if (row == 0) {
+            printf("\n");
+        }
+        row = (row +1) % 8;
+    }
+}
 
 // scramble bits from MSB to LSB
 void scrambleBits(char *c, int length, int order) {
     char * delayBuffer;
     char tmp;
+    char bit = 0;;
     delayBuffer = (char*) malloc(order*8);
     memset(delayBuffer, 0, (order*8));
     for(int i = 0; c[i] != '\n' && i < length; i++) {
         for(int j = 7; j >= 0; j--){
+            bit = (c[i] >> j) & 0x01;
             tmp = delayBuffer[order - 1] ^ delayBuffer[(order/2)];
-            c[i] = c[i] ^ (tmp << j);
-            // pushInFront(c[i], delayBuffer, order);
+            bit = bit ^ tmp;
+            if(bit) { c[i] |= 1 << j;    } 
+            else    { c[i] &= ~(1 << j); }
             pushInFront(((0x01 << j) & c[i]) ? 1 : 0, delayBuffer, order);
         }
     }
@@ -239,7 +279,7 @@ void scrambleBits(char *c, int length, int order) {
 void descrambleBits(char *c, int length, int order) { 
     char * delayBuffer;
     char tmp;
-    
+    char bit;
     // add an extra element to buffer to make room 
     // for the "wire" between major delay blocks
     delayBuffer = (char*) malloc((order + 1)*8);
@@ -248,7 +288,10 @@ void descrambleBits(char *c, int length, int order) {
         for(int j = 7; j >= 0; j--) {
             pushInFront(((0x01 << j) & c[i]) ? 1 : 0, delayBuffer, order + 1);
             tmp = delayBuffer[order - 0] ^ delayBuffer[(order/2) + 1];
-            c[i] = c[i] ^ (tmp << j);
+            bit = (c[i] >> j) & 0x01;
+            bit = bit ^ tmp;
+            if(bit) { c[i] |= 1 << j;    } 
+            else    { c[i] &= ~(1 << j); }
         }
     }
     free(delayBuffer);
