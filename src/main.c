@@ -360,7 +360,8 @@ int main(void)
                     uprintf("\n\tPAYLOAD @ %i\n", payloadIndex);
                     payloadLength = extractPayload(&RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN);
                     if(SCRAMBLE_FLAG) {
-                        descrambleBits(RX_PAYLOAD, payloadLength*8, SCRAMBLE_ORDER);
+                        // descrambleBits(RX_PAYLOAD, payloadLength*8, SCRAMBLE_ORDER);
+                        descrambleBits(RX_PAYLOAD, payloadLength, SCRAMBLE_ORDER);
                     }
                     uprintf("\tPAYLOAD: %s", RX_PAYLOAD);
                     uprintf(GREET_WAIT_CMD);
