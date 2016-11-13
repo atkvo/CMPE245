@@ -307,7 +307,7 @@ void initializeBuffers() {
 
     initBuffer(&PAYLOAD);
     generateSync(&PAYLOAD, 32);
-    addPayload(&PAYLOAD, "ANDREW5295\n");
+    addPayload(&PAYLOAD, "AJANDREW5295\n");
 
     initBuffer(&TEST_RX_BUF);
     addPayload(&TEST_RX_BUF, "SOMEFILLER\n");

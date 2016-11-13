@@ -31,6 +31,7 @@
 
 #define MAX_PRINT_LENGTH   1024
 
+
 void uart_init(uint32_t baud);
 
 void uart_tx(char ch);

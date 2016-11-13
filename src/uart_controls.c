@@ -1,5 +1,8 @@
 
 #include "uart_controls.h"
+
+int _UART_INITIALIZED = 0;
+
 void uart_init(uint32_t baud) {
     uint32_t uartPclk, pclk, regVal;
     LPC_SC->PCONP |= (1 << PCUART3);
@@ -37,32 +40,42 @@ void uart_init(uint32_t baud) {
     LPC_UART3->DLM = (regVal >> 0x08) & 0xFF;
     // done setting up baud rate
     LPC_UART3->LCR &= ~(1 << U_LCR_DIV_LATCH);  // disable access to divisors
+    _UART_INITIALIZED = 1;
 }
 
 void uart_tx(char ch) {
-    while(CHECK_BIT(LPC_UART3->LSR, U_LSR_THRE) == 0);  // wait for TX reg to empty
-    LPC_UART3->THR = ch;                                // load TX char
+    if(_UART_INITIALIZED) {
+        while(CHECK_BIT(LPC_UART3->LSR, U_LSR_THRE) == 0);  // wait for TX reg to empty
+        LPC_UART3->THR = ch;                                // load TX char
+    }
 }
 
 char uart_rx() {
-    char rx = 'X';
-    volatile int i = 0;
-    while(CHECK_BIT(LPC_UART3->LSR, U_LSR_RDR) == 0) i++;   // wait until char is received
-    rx = LPC_UART3->RBR;
-    return rx;
+    if(_UART_INITIALIZED) {
+        char rx = 'X';
+        volatile int i = 0;
+        while(CHECK_BIT(LPC_UART3->LSR, U_LSR_RDR) == 0) i++;   // wait until char is received
+        rx = LPC_UART3->RBR;
+        return rx;
+    } 
+    else {
+        return 0;
+    }
 }
 
 void uprintf(const char * fmt, ...) {
-    char c[MAX_PRINT_LENGTH];
-    va_list argptr;
-    va_start(argptr, fmt);
-    vsprintf(c, fmt, argptr);
+    if(_UART_INITIALIZED) {
+        char c[MAX_PRINT_LENGTH];
+        va_list argptr;
+        va_start(argptr, fmt);
+        vsprintf(c, fmt, argptr);
 
-    int i = 0;
-    while(c[i] != '\0' && i < MAX_PRINT_LENGTH) {
-        uart_tx(c[i]);
-        i++;
+        int i = 0;
+        while(c[i] != '\0' && i < MAX_PRINT_LENGTH) {
+            uart_tx(c[i]);
+            i++;
+        }
+
+        va_end(argptr);
     }
-
-    va_end(argptr);
 }
