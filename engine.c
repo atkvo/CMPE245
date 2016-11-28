@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "engine.h"
-
+#include "uart_controls.h"
 
 // buffer methods
 void initBuffer(s_buff *buf) {
@@ -74,13 +74,18 @@ void generateCorruptedSync(s_buff *sb, uint16_t bytes, int percentage) {
 
 void addPayload(s_buff *sbuf, char * payload) {
     // int startIndex = sbuf->bits;
-    char lastAdded = 0;
-    for (int i = 0; payload[i] != '\0'; ++i)
+    // char lastAdded = 0;
+    int len = strlen(payload);
+    // for (int i = 0; payload[i] != '\0'; ++i)
+    for (int i = 0; i < len; ++i)
     {
         pushToBufferBitByBit(sbuf, payload[i]);
-        lastAdded = payload[i];
+        // lastAdded = payload[i];
     }
-    if(lastAdded != '\n') { pushToBufferBitByBit(sbuf, '\n'); }
+    // if(lastAdded != '\n') { pushToBufferBitByBit(sbuf, '\n'); }
+    /* add payload termination */
+    // pushToBufferBitByBit(sbuf, 0);
+    pushToBufferBitByBit(sbuf, '\n');
 }
 
 
@@ -145,6 +150,7 @@ int scanForMatch(s_buff *window, s_buff *data, int syncBytes, unsigned int minCo
 
 int extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength) {
     int j = 0;
+    int newlineDetected = 0;
     for(int i = startIndex; c[j] != '\n' && i < data->bits && j < maxLength; i += 8) {
         c[j] = 0;
         for(int b = 0; b < 8; b++) {
@@ -152,12 +158,14 @@ int extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength
         }
         if(c[j] == '\n') {
             c[j + 1] = '\0';
+            newlineDetected = 1;
             break;
         }
         else {
             j++;
         }
     }
+    // return (j - newlineDetected);
     return j;
 }
 
@@ -262,9 +270,10 @@ void scrambleBits(char *c, int length, int order) {
     char * delayBuffer;
     char tmp;
     char bit = 0;;
-    delayBuffer = (char*) malloc(order*8);
-    memset(delayBuffer, 0, (order*8));
-    for(int i = 0; c[i] != '\n' && i < length; i++) {
+    delayBuffer = (char*) malloc(order);
+    memset(delayBuffer, 0, (order));
+    // for(int i = 0; c[i] != '\n' && i < length; i++) {
+    for(int i = 0; i < length; i++) {
         for(int j = 7; j >= 0; j--){
             bit = (c[i] >> j) & 0x01;
             tmp = delayBuffer[order - 1] ^ delayBuffer[(order/2)];
@@ -282,9 +291,10 @@ void descrambleBits(char *c, int length, int order) {
     char bit;
     // add an extra element to buffer to make room 
     // for the "wire" between major delay blocks
-    delayBuffer = (char*) malloc((order + 1)*8);
-    memset(delayBuffer, 0, (order + 1)*8);
+    delayBuffer = (char*) malloc((order + 1));
+    memset(delayBuffer, 0, (order + 1));
     for(int i = 0; c[i] != '\n' && i < length; i++) {
+    // for(int i = 0; i < length; i++) {
         for(int j = 7; j >= 0; j--) {
             pushInFront(((0x01 << j) & c[i]) ? 1 : 0, delayBuffer, order + 1);
             tmp = delayBuffer[order - 0] ^ delayBuffer[(order/2) + 1];
