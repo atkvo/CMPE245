@@ -39,5 +39,4 @@ void scrambleElements(char *c, int length, int order);
 void descrambleElements(char *c, int length, int order);
 
 void scrambleBits(char *c, int length, int order);
-// void scrambleBits(char *c, int length, int bits, int order);
 void descrambleBits(char *c, int length, int order);
