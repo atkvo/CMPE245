@@ -17,7 +17,7 @@ PROJ_NAME=lisa
 LPC_CORE=$(HOME)/dev/arm/LPC17XX_CORE
 
 # set this to the branch to push to
-LAB=lab2
+LAB=lab3
 
 # that's it, no need to change anything below this line!
 
