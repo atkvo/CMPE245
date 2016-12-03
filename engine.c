@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "engine.h"
-#include "uart_controls.h"
 
 // buffer methods
 void initBuffer(s_buff *buf) {
