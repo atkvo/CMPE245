@@ -19,7 +19,7 @@
 int SYNC_BYTES      = 32;
 int MIN_CONFIDENCE  = 3;
 int ENABLE_EVENT_MSGS = 0;
-int SCRAMBLE_ORDER = 7;
+int SCRAMBLE_ORDER = 11;
 
 //#define URX_BUF_LEN             1024
 char RX_PAYLOAD[MAX_RX_LEN];
@@ -363,7 +363,9 @@ int main(void)
                         // descrambleBits(RX_PAYLOAD, payloadLength*8, SCRAMBLE_ORDER);
                         descrambleBits(RX_PAYLOAD, payloadLength, SCRAMBLE_ORDER);
                     }
-                    uprintf("\tPAYLOAD: %s", RX_PAYLOAD);
+                    uprintf("\tSOURCE      : %c\n", RX_PAYLOAD[0]);
+                    uprintf("\tDESTINATION : %c\n", RX_PAYLOAD[1]);
+                    uprintf("\tPAYLOAD     : %s\n", &RX_PAYLOAD[2]);
                     uprintf(GREET_WAIT_CMD);
                 }
                 else {
