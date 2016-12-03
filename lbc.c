@@ -29,10 +29,10 @@ int main(int argc, char const *argv[])
 
     /* ask user for noise bit positions */
     int noiseBit = -1;
-    printf("Select noise bit position 1: ");
+    printf("\nSelect noise bit position 1: ");
     scanf("%d", &noiseBit);
     if(noiseBit >= 0 && noiseBit < __k) {
-        printf("noise bit @ %d", noiseBit);
+        // printf("noise bit @ %d", noiseBit);
         e[noiseBit] = 1;
     }
 
@@ -40,34 +40,32 @@ int main(int argc, char const *argv[])
     printf("\nSelect noise bit position 2: ");
     scanf("%d", &noiseBit);
     if(noiseBit >= 0 && noiseBit < __k) {
-        printf("noise bit @ %d", noiseBit);
+        // printf("noise bit @ %d", noiseBit);
         e[noiseBit] = 1;
     }
 
     /* Encode payload and print the encoding */
-    printf("Encoded payload: ");
+    printf("\nEncoded payload: ");
     encodeData(c, __n);
     for(int i = 0; i < __n; i++) {
         if(i == __k) printf(" ");
         printf("%d", c[i]);
     }
-    printf("\n");
 
 
     /* Add noise array to packet */
     for(int i = 0; i < __k; i++) {
         c[i] ^= e[i];
     }
-    printf("Altered payload: ");
+    printf("\nAltered payload: ");
     for(int i = 0; i < __n; i++) {
         if(i == __k) printf(" ");
         printf("%d", c[i]);
     }
-    printf("\n");
 
     /* Extract syndrome from encoded packet + noise */
     getSyndrome(c, s);
-    printf("\nSYNDROME: ");
+    printf("\nSYNDROME       : ");
     for(int i = 0; i < __n - __k; i++) {
         printf("%d", s[i]);
     }
