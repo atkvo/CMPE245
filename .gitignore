@@ -3,3 +3,6 @@
 *.elf
 *.hex
 *.map
+*.o
+.DS_Store
+*.sublime-*
