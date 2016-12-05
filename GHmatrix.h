@@ -11,6 +11,10 @@ enum gh_errors {
     OK,
     GENERATOR_NOT_READY
 };
+enum SYNDROME_ERRS {
+    SYNDROME_OK     = 0,
+    SYNDROME_ERR    = -1
+};
 
 extern char pMatrix[__k][__n - __k];
 extern char genMatrix[__k][__n];

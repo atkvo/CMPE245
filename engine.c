@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "engine.h"
+#include "GHmatrix.h"
 
 // buffer methods
 void initBuffer(s_buff *buf) {
@@ -87,6 +88,20 @@ void addPayload(s_buff *sbuf, char * payload) {
     pushToBufferBitByBit(sbuf, '\n');
 }
 
+void addPayloadLBC(s_buff *sbuf, char * payload) {
+    int len = strlen(payload);
+    for (int i = 0; i < len; ++i)
+    {
+        pushToBufferBitByBit(sbuf, payload[i]);
+        // encode every 8 bits 
+        if(encodeData(&sbuf->stream[sbuf->bits - 8], 0) == 0) {
+            sbuf->bits += __n - __k;
+        } 
+    }
+    /* encode data */
+    pushToBufferBitByBit(sbuf, '\n');
+}
+
 
 // returns the index of payload within data->stream
 // returns -1 if minimum confidence isn't met
@@ -147,17 +162,27 @@ int scanForMatch(s_buff *window, s_buff *data, int syncBytes, unsigned int minCo
     return -1;
 }
 
-int extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength) {
+// returns the number of bits in the payload or SYNDROME_ERR
+int extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength, int enableLBC) {
+    static char testbuffer[__k];
+    static char syndrome[__n-__k];
+    int jumpAmount = enableLBC ? 12 : 8;
     int j = 0;
-    int newlineDetected = 0;
-    for(int i = startIndex; c[j] != '\n' && i < data->bits && j < maxLength; i += 8) {
+    for(int i = startIndex; c[j] != '\n' && i < data->bits && j < maxLength; i += jumpAmount) {
         c[j] = 0;
-        for(int b = 0; b < 8; b++) {
-            c[j] |= (data->stream[i + b] << (7 - b));
+        for(int b = 0; b < jumpAmount; b++) {
+            if(b < 8) {
+                c[j] |= (data->stream[i + b] << (7 - b));
+            } 
+            // get the encoding bits
+            testbuffer[b] = data->stream[i + b];
+        }
+        /* test syndrome matrix here */
+        if(getSyndrome(testbuffer, syndrome) == SYNDROME_ERR) {
+            return SYNDROME_ERR;
         }
         if(c[j] == '\n') {
             c[j + 1] = '\0';
-            newlineDetected = 1;
             break;
         }
         else {

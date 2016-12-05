@@ -17,6 +17,8 @@ enum SEPARATOR_TYPE {
     NEWLINE = 2
 };
 
+#define SYNDROME_ERROR -5
+
 // buffer methods
 void initBuffer(s_buff *buf);
 void clearBuffer(s_buff *buf);
@@ -28,9 +30,10 @@ void generateSync(s_buff *sb, uint16_t bytes);
 void generateCorruptedSync(s_buff *sb, uint16_t bytes, int seed);
 
 void addPayload(s_buff *sbuf, char * payload);
+void addPayloadLBC(s_buff *sbuf, char * payload);
 
 int scanForMatch(s_buff *window, s_buff *data, int syncBytes, unsigned int minConfidence);
-int extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength);
+int extractPayload(s_buff *data, char *c, int startIndex, unsigned int maxLength, int enableLBC);
 
 void printPacket(s_buff *b);
 void printPacketHex(s_buff *b, enum SEPARATOR_TYPE sepType);
