@@ -11,6 +11,7 @@
 #include "samplingtimer.h"
 #include "gpiocontrols.h"
 #include "engine.h"
+#include "GHmatrix.h"
 
 #define MAX_PRINT_LENGTH 1024
 #define MAX_RX_LEN       1024
@@ -28,6 +29,7 @@ s_buff RX_BUF;
 s_buff TEST_RX_BUF;
 s_buff WINDOW;
 s_buff PAYLOAD;
+s_buff ERR_REQUEST;
 
 int SEND_PAYLOAD_FLAG       = 0;
 int REPEAT_SEND_FLAG        = 0;
@@ -37,6 +39,7 @@ int RUN_TEST_FLAG           = 0;
 int TX_LOOP_FLAG            = 0;
 int ACK_FLAG                = 0;
 int SCRAMBLE_FLAG           = 0;
+int LBC_FLAG                = 1;
 int TWO_WAY_FLAG            = 0;    // allows for TX + RX at the same time (loopback)
 
 const char GREET[] = "\n\t**** SYSTEM INITIALIZED ****\n";
@@ -246,7 +249,12 @@ void UART3_IRQHandler(void) {
                             len = strlen(&URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX]);
                             scrambleBits(&URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX], len, SCRAMBLE_ORDER);
                         }
-                        addPayload(&PAYLOAD, &URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX]);
+                        if(LBC_FLAG) {
+                            addPayloadLBC(&PAYLOAD, &URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX]);
+                        }
+                        else {
+                            addPayload(&PAYLOAD, &URX_BUF.stream[CMD_SET_CUSTOM_PAYLOAD_PARAM_INDEX]);
+                        }
                     }
                 }
                 else if (strcmp(CMD_RUN_TEST, URX_BUF.stream) == 0) {
@@ -319,6 +327,7 @@ void initializeBuffers() {
 }
 int main(void)
 {
+    initLBC();
     SystemInit();
     SystemCoreClockUpdate();
     initializeBuffers();
@@ -335,14 +344,14 @@ int main(void)
     uprintf(GREET_WAIT_CMD);
 
     int payloadIndex = 0;
-    int payloadLength = 0;
+    int extractionResults = 0;
     while(1) {
         if(EXTRACT_PAYLOAD_FLAG == 1 || RUN_TEST_FLAG == 1) {
             if(RUN_TEST_FLAG == 1) {
                 payloadIndex = scanForMatch(&WINDOW, &TEST_RX_BUF, SYNC_BYTES, MIN_CONFIDENCE);
                 if(payloadIndex > 0) {
                     uprintf("\n\tPAYLOAD @ %i\n", payloadIndex);
-                    extractPayload(&TEST_RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN);
+                    extractPayload(&TEST_RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN, LBC_FLAG);
                     uprintf("\tPAYLOAD: %s\n", RX_PAYLOAD);
                 }
                 else {
@@ -358,15 +367,21 @@ int main(void)
                 payloadIndex = scanForMatch(&WINDOW, &RX_BUF, SYNC_BYTES, MIN_CONFIDENCE);
                 if(payloadIndex > 0) {
                     uprintf("\n\tPAYLOAD @ %i\n", payloadIndex);
-                    payloadLength = extractPayload(&RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN);
-                    if(SCRAMBLE_FLAG) {
-                        // descrambleBits(RX_PAYLOAD, payloadLength*8, SCRAMBLE_ORDER);
-                        descrambleBits(RX_PAYLOAD, payloadLength, SCRAMBLE_ORDER);
+                    extractionResults = extractPayload(&RX_BUF, RX_PAYLOAD, payloadIndex, MAX_RX_LEN, LBC_FLAG);
+                    if(LBC_FLAG == 0 || extractionResults != SYNDROME_ERR) {
+                        if(SCRAMBLE_FLAG) {
+                            // descrambleBits(RX_PAYLOAD, extractionResults*8, SCRAMBLE_ORDER);
+                            descrambleBits(RX_PAYLOAD, extractionResults, SCRAMBLE_ORDER);
+                        }
+                        uprintf("\tSOURCE      : %c\n", RX_PAYLOAD[0]);
+                        uprintf("\tDESTINATION : %c\n", RX_PAYLOAD[1]);
+                        uprintf("\tPAYLOAD     : %s\n", &RX_PAYLOAD[2]);
+                        uprintf(GREET_WAIT_CMD);
                     }
-                    uprintf("\tSOURCE      : %c\n", RX_PAYLOAD[0]);
-                    uprintf("\tDESTINATION : %c\n", RX_PAYLOAD[1]);
-                    uprintf("\tPAYLOAD     : %s\n", &RX_PAYLOAD[2]);
-                    uprintf(GREET_WAIT_CMD);
+                    else { 
+                        uprintf("\nError decoding"); 
+                        uprintf(GREET_WAIT_CMD); 
+                    }
                 }
                 else {
                     if( ENABLE_EVENT_MSGS ) { 

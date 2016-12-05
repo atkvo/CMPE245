@@ -17,6 +17,7 @@ char pMatrix[__k][__n - __k] = {
     { 0, 0, 0, 0 },
     { 0, 0, 1, 1 }
 };
+
 //     { 1, 1, 0, 0 },
 //     { 0, 1, 1, 0 },
 //     { 0, 0, 1, 1 },
@@ -25,7 +26,6 @@ char pMatrix[__k][__n - __k] = {
 //     { 0, 1, 0, 1 },
 //     { 1, 1, 1, 0 },
 //     { 0, 1, 1, 1 }
-
 char p[__k_][__n_ - __k_];
 
 int testLinearIndependence(int rows, int columns, char matrix[rows][columns]) {
@@ -131,7 +131,7 @@ char accessHMatrix(int i, int j) {
     }
     */
 int encodeData(char *buf, int maxLength) {
-    if(maxLength >= (__n)) {
+    // if(maxLength >= (__n)) {
         int tmp = 0;
         /* multiply D * G here */
         for(int j = 0; j < __n; j++) {
@@ -142,7 +142,7 @@ int encodeData(char *buf, int maxLength) {
             buf[j] = tmp %2;
         }
         return 0;
-    } else { return -1; }
+    // } else { return -1; }
 }
 
 int testGH() {
@@ -202,12 +202,14 @@ void printP() {
 int getSyndrome(char *e, char* result) {
     // only 1 row
     // n columns
+    int returnCode = SYNDROME_OK;
     for(int j = 0; j < (__n - __k); j++) {
         result[j] = 0;
         for(int k = 0; k < (__n); k++) {
             result[j] += e[k]*accessHMatrix(k, j);
         }
         result[j] = result[j]%2;
+        if(result[j] == 1) { returnCode = SYNDROME_ERR; }
     }
-    return 0;
+    return returnCode;
 }

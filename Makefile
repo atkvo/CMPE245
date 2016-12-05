@@ -7,6 +7,7 @@ SRCS =   \
 	 uart_controls.c \
 	 samplingtimer.c \
 	 gpiocontrols.c \
+	 GHmatrix.c \
 	 engine.c \
  	 main.c
  
