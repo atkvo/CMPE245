@@ -29,9 +29,10 @@ s_buff RX_BUF;
 s_buff TEST_RX_BUF;
 s_buff WINDOW;
 s_buff PAYLOAD;
-s_buff ERR_REQUEST;
+s_buff REPEAT_REQUEST;
 
 int SEND_PAYLOAD_FLAG       = 0;
+int SEND_REPEAT_FLAG        = 0;
 int REPEAT_SEND_FLAG        = 0;
 int EXTRACT_PAYLOAD_FLAG    = 0;
 int LISTEN_EN_FLAG          = 0;
@@ -103,6 +104,7 @@ const char CMD_LIST[] =
 
 
 int PAYLOAD_PUSH_INDEX = 0;
+int REPEAT_PAYLOAD_PUSH_INDEX = 0;
 void RIT_IRQHandler(void) {
     if(SEND_PAYLOAD_FLAG == 1) {
         if(PAYLOAD_PUSH_INDEX < PAYLOAD.bits) {
@@ -116,6 +118,17 @@ void RIT_IRQHandler(void) {
                 SEND_PAYLOAD_FLAG = 0;
             }
             PAYLOAD_PUSH_INDEX = 0;
+        }
+    }
+    else if (SEND_REPEAT_FLAG == 1) {
+        if(REPEAT_PAYLOAD_PUSH_INDEX < REPEAT_REQUEST.bits) {
+            setTx(REPEAT_REQUEST.stream[PAYLOAD_PUSH_INDEX]);
+            REPEAT_PAYLOAD_PUSH_INDEX++;
+        }
+        else {
+            if (ENABLE_EVENT_MSGS) uprintf("\nEVENT: REPEAT REQUEST TRANSMITTED\n");
+            SEND_REPEAT_FLAG = 0;
+            REPEAT_PAYLOAD_PUSH_INDEX = 0;
         }
     }
     if(LISTEN_EN_FLAG && (TWO_WAY_FLAG || SEND_PAYLOAD_FLAG == 0)) {
@@ -141,6 +154,11 @@ void RIT_IRQHandler(void) {
 
 void sendPayload() {
     SEND_PAYLOAD_FLAG = 1;
+    if(IS_SAMPLING == 0) { samplerStart(); }
+}
+
+void sendResendRequest() {
+    SEND_REPEAT_FLAG = 1;
     if(IS_SAMPLING == 0) { samplerStart(); }
 }
 void UART3_IRQHandler(void) {
@@ -317,6 +335,10 @@ void initializeBuffers() {
     generateSync(&PAYLOAD, 32);
     addPayload(&PAYLOAD, "AJANDREW5295\n");
 
+    initBuffer(&REPEAT_REQUEST);
+    generateSync(&REPEAT_REQUEST, 32);
+    addPayload(&REPEAT_REQUEST, "AJERR\n");
+
     initBuffer(&TEST_RX_BUF);
     addPayload(&TEST_RX_BUF, "SOMEFILLER\n");
     generateSync(&TEST_RX_BUF, 32);
@@ -379,7 +401,8 @@ int main(void)
                         uprintf(GREET_WAIT_CMD);
                     }
                     else { 
-                        uprintf("\nError decoding"); 
+                        sendResendRequest();
+                        uprintf("\tSyndrome Contains Error.\n"); 
                         uprintf(GREET_WAIT_CMD); 
                     }
                 }
